@@ -10,29 +10,53 @@ interface ServiceInfo {
   github?: string
 }
 
-const SERVICES: ServiceInfo[] = [
+const SERVICE_HOST = process.env.SERVICE_HOST || 'http://localhost'
+
+interface ServiceDef {
+  id: string
+  name: string
+  port: number
+  path: string
+  description: string
+  github?: string
+}
+
+const SERVICE_DEFS: ServiceDef[] = [
   {
     id: 'ruang',
     name: 'Ruang 3D Builder',
-    url: 'http://localhost:5173',
+    port: 5173,
+    path: '/',
     description: 'Workspace 3D builder — desain ruang kerja dengan drag & drop aset, AI generative design, undo/redo, full-page mode.',
     github: 'https://github.com/irfanrizkiaditri/FanraAI',
   },
   {
     id: 'touchpad',
     name: 'Remote Touchpad Server',
-    url: 'http://localhost:8000',
+    port: 8000,
+    path: '/',
     description: 'Server FastAPI + WebSocket untuk kontrol kursor laptop dari browser HP. Gestur multi-sentuh, media control, keyboard virtual.',
     github: 'https://github.com/irfanrizkiaditri/FanraAI',
   },
   {
     id: 'dashboard',
     name: 'Touchpad Dashboard',
-    url: 'http://localhost:3000',
+    port: 3000,
+    path: '/',
     description: 'Dashboard Next.js untuk monitor status & konfigurasi remote touchpad server secara real-time.',
     github: 'https://github.com/irfanrizkiaditri/touchpad-dashboard',
   },
 ]
+
+function getServiceInfo(def: ServiceDef): ServiceInfo {
+  return {
+    id: def.id,
+    name: def.name,
+    url: `${SERVICE_HOST}:${def.port}${def.path}`,
+    description: def.description,
+    github: def.github,
+  }
+}
 
 interface ServiceStatus {
   id: string
@@ -86,7 +110,7 @@ async function checkService(service: ServiceInfo): Promise<ServiceStatus> {
 }
 
 export async function GET() {
-  const statuses = await Promise.all(SERVICES.map(checkService))
+  const statuses = await Promise.all(SERVICE_DEFS.map((def) => checkService(getServiceInfo(def))))
   const onlineCount = statuses.filter((s) => s.status === 'online').length
   return NextResponse.json({
     ok: true,
