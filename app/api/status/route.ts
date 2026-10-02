@@ -1,0 +1,98 @@
+import { NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
+
+interface ServiceInfo {
+  id: string
+  name: string
+  url: string
+  description: string
+  github?: string
+}
+
+const SERVICES: ServiceInfo[] = [
+  {
+    id: 'ruang',
+    name: 'Ruang 3D Builder',
+    url: 'http://localhost:5173',
+    description: 'Workspace 3D builder — desain ruang kerja dengan drag & drop aset, AI generative design, undo/redo, full-page mode.',
+    github: 'https://github.com/irfanrizkiaditri/FanraAI',
+  },
+  {
+    id: 'touchpad',
+    name: 'Remote Touchpad Server',
+    url: 'http://localhost:8000',
+    description: 'Server FastAPI + WebSocket untuk kontrol kursor laptop dari browser HP. Gestur multi-sentuh, media control, keyboard virtual.',
+    github: 'https://github.com/irfanrizkiaditri/FanraAI',
+  },
+  {
+    id: 'dashboard',
+    name: 'Touchpad Dashboard',
+    url: 'http://localhost:3000',
+    description: 'Dashboard Next.js untuk monitor status & konfigurasi remote touchpad server secara real-time.',
+    github: 'https://github.com/irfanrizkiaditri/touchpad-dashboard',
+  },
+]
+
+interface ServiceStatus {
+  id: string
+  name: string
+  description: string
+  url: string
+  github?: string
+  status: 'online' | 'offline'
+  latencyMs: number | null
+  detail: string | null
+}
+
+async function checkService(service: ServiceInfo): Promise<ServiceStatus> {
+  const started = Date.now()
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 3000)
+  try {
+    const res = await fetch(service.url, { signal: controller.signal })
+    const latency = Date.now() - started
+    let detail = null
+    if (service.id === 'touchpad') {
+      try {
+        const health = await fetch(`${service.url}/health`, { signal: controller.signal })
+        detail = await health.text()
+      } catch {}
+    }
+    return {
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      url: service.url,
+      github: service.github,
+      status: res.ok ? 'online' : 'offline',
+      latencyMs: latency,
+      detail,
+    }
+  } catch {
+    return {
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      url: service.url,
+      github: service.github,
+      status: 'offline',
+      latencyMs: null,
+      detail: null,
+    }
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+export async function GET() {
+  const statuses = await Promise.all(SERVICES.map(checkService))
+  const onlineCount = statuses.filter((s) => s.status === 'online').length
+  return NextResponse.json({
+    ok: true,
+    timestamp: new Date().toISOString(),
+    online: onlineCount,
+    total: statuses.length,
+    services: statuses,
+  })
+}
