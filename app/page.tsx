@@ -127,12 +127,12 @@ export default function Home() {
                 loading
                   ? 'border-[#e2e6ec] bg-[#f6f7f9] text-[#5a6472]'
                   : allOnline
-                    ? 'border-[#0f8a5f]/30 bg-[#0f8a5f]/10 text-[#0a6b48]'
+                    ? 'border-[#0d7a52]/30 bg-[#0d7a52]/10 text-[#0a6b48]'
                     : 'border-[#c0392b]/30 bg-[#c0392b]/10 text-[#962c20]'
               }`}
             >
               <span
-                className={`h-2 w-2 rounded-full ${loading ? 'bg-[#9aa4b2]' : allOnline ? 'bg-[#0f8a5f]' : 'bg-[#c0392b]'}`}
+                className={`h-2 w-2 rounded-full ${loading ? 'bg-[#9aa4b2]' : allOnline ? 'bg-[#0d7a52]' : 'bg-[#c0392b]'}`}
               />
               {loading
                 ? 'Memuat status'
@@ -185,7 +185,7 @@ export default function Home() {
                     <span
                       className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${
                         svc.status === 'online'
-                          ? 'bg-[#0f8a5f]/10 text-[#0a6b48]'
+                          ? 'bg-[#0d7a52]/10 text-[#0a6b48]'
                           : 'bg-[#c0392b]/10 text-[#962c20]'
                       }`}
                     >
@@ -289,12 +289,12 @@ export default function Home() {
                 placeholder="Tulis pesan ke Fanra AI..."
                 disabled={sending}
                 aria-label="Pesan ke Fanra AI"
-                className="min-w-0 flex-1 rounded-md border border-[#e2e6ec] bg-white px-3.5 py-2.5 text-sm text-[#14181f] placeholder:text-[#9aa4b2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#14181f] disabled:opacity-50"
+                className="min-w-0 flex-1 rounded-md border border-[#e2e6ec] bg-white px-3.5 py-2.5 text-sm text-[#14181f] placeholder:text-[#6b7686] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#14181f] disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={sending || !input.trim()}
-                className="shrink-0 rounded-md bg-[#0f8a5f] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#0a6b48] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8a5f] disabled:opacity-50"
+                className="shrink-0 rounded-md bg-[#0d7a52] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#0a6b48] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0d7a52] disabled:opacity-50"
               >
                 {sending ? 'Mengirim...' : 'Kirim'}
               </button>
