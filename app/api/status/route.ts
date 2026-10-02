@@ -6,19 +6,23 @@ interface ServiceDef {
   id: string
   name: string
   port: number
-  path: string
   description: string
   github?: string
 }
 
-const SERVICE_HOST = process.env.SERVICE_HOST || 'http://localhost'
+// URL publik ke setiap service di laptop Irfan.
+// Di-override lewat env di Vercel; default memakai tunnel aktif saat ini.
+const DEFAULT_URLS: Record<string, string> = {
+  ruang: 'https://baths-groundwater-compiler-sys.trycloudflare.com',
+  touchpad: 'https://lucas-norman-ipod-need.trycloudflare.com',
+  dashboard: 'https://ralph-oak-showing-lean.trycloudflare.com',
+}
 
 const SERVICE_DEFS: ServiceDef[] = [
   {
     id: 'ruang',
     name: 'Ruang 3D Builder',
     port: 5173,
-    path: '/',
     description:
       'Workspace 3D builder. Desain ruang kerja dengan drag and drop aset, AI generative design, undo redo, dan full-page mode.',
     github: 'https://github.com/irfanrizkiaditri/FanraAI',
@@ -27,7 +31,6 @@ const SERVICE_DEFS: ServiceDef[] = [
     id: 'touchpad',
     name: 'Remote Touchpad Server',
     port: 8000,
-    path: '/',
     description:
       'Server FastAPI dan WebSocket untuk kontrol kursor laptop dari browser HP. Gestur multi-sentuh, media control, keyboard virtual.',
     github: 'https://github.com/irfanrizkiaditri/FanraAI',
@@ -36,33 +39,43 @@ const SERVICE_DEFS: ServiceDef[] = [
     id: 'dashboard',
     name: 'Touchpad Dashboard',
     port: 3000,
-    path: '/',
     description:
       'Dashboard Next.js untuk monitor status dan konfigurasi remote touchpad server secara real-time.',
     github: 'https://github.com/irfanrizkiaditri/touchpad-dashboard',
   },
 ]
 
-interface ServiceStatus extends ServiceDef {
+interface ServiceStatus {
+  id: string
+  name: string
+  port: number
+  description: string
   url: string
+  github?: string
   status: 'online' | 'offline'
   latencyMs: number | null
   detail: string | null
 }
 
+function resolveUrl(def: ServiceDef): string {
+  const fromEnv = process.env[`SERVICE_URL_${def.id.toUpperCase()}`]
+  if (fromEnv) return fromEnv.replace(/\/$/, '')
+  return DEFAULT_URLS[def.id]
+}
+
 async function checkService(def: ServiceDef): Promise<ServiceStatus> {
-  const url = `${SERVICE_HOST}:${def.port}${def.path}`
+  const url = resolveUrl(def)
   const started = Date.now()
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 3500)
+  const timeout = setTimeout(() => controller.abort(), 5000)
   try {
     const res = await fetch(url, { signal: controller.signal })
     const latency = Date.now() - started
     let detail: string | null = null
     if (def.id === 'touchpad') {
       try {
-        const health = await fetch(`${SERVICE_HOST}:${def.port}/health`, { signal: controller.signal })
-        detail = await health.text()
+        const health = await fetch(`${url}/health`, { signal: controller.signal })
+        detail = (await health.text()).slice(0, 120)
       } catch {}
     }
     return {
@@ -85,7 +98,6 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     timestamp: new Date().toISOString(),
-    host: SERVICE_HOST,
     online: onlineCount,
     total: statuses.length,
     services: statuses,
