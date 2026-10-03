@@ -57,14 +57,45 @@ interface ServiceStatus {
   detail: string | null
 }
 
-function resolveUrl(def: ServiceDef): string {
+// Sumber URL tunnel: file public-tunnels.json di repo GitHub FanraAI.
+// Laptop Irfan update file ini otomatis tiap tunnel dibuat (sync-tunnels.bat),
+// jadi portal selalu tahu URL terbaru tanpa perlu set env Vercel manual.
+const TUNNELS_JSON_URL =
+  'https://raw.githubusercontent.com/irfanrizkiaditri/FanraAI/main/public-tunnels.json'
+
+let cachedTunnels: Record<string, string> | null = null
+let cacheTime = 0
+
+async function fetchTunnels(): Promise<Record<string, string>> {
+  // Cache 30 detik biar tidak spam GitHub
+  const now = Date.now()
+  if (cachedTunnels && now - cacheTime < 30_000) return cachedTunnels
+  try {
+    const res = await fetch(TUNNELS_JSON_URL, { cache: 'no-store' })
+    if (res.ok) {
+      const data = await res.json()
+      cachedTunnels = data
+      cacheTime = now
+      return data
+    }
+  } catch {
+    // GitHub tidak bisa diakses, fallback ke default
+  }
+  return {}
+}
+
+async function resolveUrl(def: ServiceDef): Promise<string> {
+  // Prioritas: env Vercel > tunnels.json dari GitHub > default hardcoded
   const fromEnv = process.env[`SERVICE_URL_${def.id.toUpperCase()}`]
   if (fromEnv) return fromEnv.replace(/\/$/, '')
+  const tunnels = await fetchTunnels()
+  const fromJson = tunnels[def.id]
+  if (fromJson) return fromJson.replace(/\/$/, '')
   return DEFAULT_URLS[def.id]
 }
 
 async function checkService(def: ServiceDef): Promise<ServiceStatus> {
-  const url = resolveUrl(def)
+  const url = await resolveUrl(def)
   const started = Date.now()
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 5000)
